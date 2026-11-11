@@ -36,6 +36,18 @@ def main(path):
     for kw in ["영어", "흥미", "검수"]:
         if kw not in b:
             errs.append(f"B: '{kw}' 항목 누락")
+    rows = re.findall(r"^\|\s*\d\s*\|.*$", b, re.M)
+    for r in rows:
+        if re.search(r"통과|검수\s*완료|확인됨|OK|✅", r) and "AI 초안" not in r:
+            errs.append("B: 원어민 검수 없이 '통과/검수 완료' 표시 금지 → 'AI 초안 · 검수 필요' 사용: " + r[:30])
+        elif "AI 초안 · 검수 필요" not in r and "검수 완료" not in r:
+            errs.append("B: 각 표현 행에 'AI 초안 · 검수 필요'(또는 실제 검수 시 '검수 완료') 필요: " + r[:30])
+    if any("검수 완료" in r for r in rows) and "reviewed/" not in b:
+        errs.append("B: '검수 완료'는 reviewed/ 기록 근거를 함께 적을 때만 허용")
+    if len(re.findall(r"카드\s*\d", b)) < 2 or not re.search(r"카드\s*1", b) or not re.search(r"카드\s*2\s*~\s*6", b):
+        errs.append("B: 카드뉴스 템플릿 v1 설명(카드 1 / 카드 2~6) 필요")
+    if re.search(r"CTA|저장·팔로우 유도|팔로우 유도|마무리 카드|훅 카드", b.replace("CTA 전용 카드 없음", "")):
+        errs.append("B: 카드뉴스에 CTA/훅/마무리 등 별도 카드 금지(템플릿 v1)")
     c = section("C")
     if len(re.findall(r"^### C-\d", c, re.M)) != 2:
         errs.append("C: '### C-1, C-2' 주제 2개 필요")
